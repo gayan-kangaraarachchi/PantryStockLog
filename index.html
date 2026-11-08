@@ -83,7 +83,18 @@ h3{font-size:17px;font-weight:600}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;min-height:42px;white-space:nowrap}
 .btn:hover{border-color:var(--muted)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+/* tap feedback: everything you can press visibly reacts */
+.btn,.icon-btn,.fchip,.tick,.step button,nav.tabs a,.lang{transition:transform .08s ease,background-color .15s,filter .15s}
+.btn:active,.icon-btn:active,.fchip:active,.step button:active{transform:scale(.95);background-color:var(--sunk)}
+.btn.primary:active{background-color:var(--accent);filter:brightness(.88)}
+.btn.armed:active{background-color:var(--bad)}
+.tick:active{transform:scale(.88)}
+nav.tabs a:active{background:var(--accent-soft)}
+nav.tabs a:active svg{transform:scale(.9)}
+nav.tabs a::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:transparent}
+nav.tabs a[aria-current="page"]::before{background:var(--accent)}
+@media (prefers-reduced-motion:reduce){.btn:active,.icon-btn:active,.fchip:active,.step button:active,.tick:active,nav.tabs a:active svg{transform:none}}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
 .btn.ghost:hover{color:var(--ink)}

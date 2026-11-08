@@ -211,6 +211,8 @@ const fq=n=>{n=Math.round(num(n)*100)/100;return n.toLocaleString(LOC(),{maximum
 const dfmt=(d,o={day:"numeric",month:"short"})=>new Date(d).toLocaleDateString(LOC(),o);
 const tfmt=d=>new Date(d).toLocaleTimeString(LOC(),{hour:"2-digit",minute:"2-digit"});
 const norm=s=>String(s||"").trim().toLowerCase();
+const TABS=["list","stock","history"];
+const fromHash=()=>{const x=(location.hash||"").slice(1);return TABS.includes(x)?x:"list"};
 const ls={get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 function toast(msg){document.querySelectorAll(".toast").forEach(t=>t.remove());const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2600)}
 function armed(btn,fn){
@@ -221,7 +223,7 @@ function armed(btn,fn){
 const catOrder=(a,b)=>(CATS.indexOf(a)+100)%100-(CATS.indexOf(b)+100)%100;
 
 /* ---------- state + storage ---------- */
-const S={mode:"pending",items:[],lists:[],tab:"list",q:"",filter:"all",listId:null,draft:{name:"",qty:"1",unit:"pcs",cat:"Other",catTouched:false},dragging:false,pendingRender:false};
+const S={mode:"pending",items:[],lists:[],tab:fromHash(),q:"",filter:"all",listId:null,draft:{name:"",qty:"1",unit:"pcs",cat:"Other",catTouched:false},dragging:false,pendingRender:false};
 const Store={
   db:null,
   async init(){
@@ -378,7 +380,7 @@ function viewList(){
     ${todo.length?order.map(c=>`<section class="card" style="padding-block:6px"><div class="eyebrow" style="padding-top:8px">${esc(catLabel(c))}</div><div class="lines">${groups.get(c).map(lineHtml).join("")}</div></section>`).join("")
       :`<div class="empty">${l.lines.length?t("all_in_basket"):t("list_empty")}</div>`}
     ${got.length?`<div class="basket-head"><div class="eyebrow">${t("in_basket",{n:got.length})}</div></div><section class="card" style="padding-block:6px"><div class="lines">${got.map(lineHtml).join("")}</div></section>`:""}
-    <button class="btn primary block" id="completeBtn" style="min-height:50px;font-size:16px;white-space:normal" ${got.length?"":"disabled"}>${got.length?t("complete_btn",{n:got.length}):t("complete_btn0")}</button>
+    <button class="btn primary block" id="completeBtn" style="min-height:50px;font-size:16px;white-space:normal" ${got.length?"":'aria-disabled="true"'}>${got.length?t("complete_btn",{n:got.length}):t("complete_btn0")}</button>
     ${got.length&&todo.length?`<p class="muted" style="margin:-4px 0 0;font-size:13px;text-align:center">${t("not_ticked_move",{n:todo.length})}</p>`:""}
     <div class="row" style="justify-content:center"><button class="btn ghost sm" id="newList">${t("another_list")}</button><button class="btn ghost sm danger" id="delList">${t("delete_list")}</button></div>
   </div>`;
@@ -520,7 +522,7 @@ function renameList(l){
 function backupCard(){
   return `<div class="card stack" style="gap:8px;margin-top:10px">
     <div><h3>${t("backup_title")}</h3><p class="muted" style="margin:2px 0 0;font-size:13px">${S.mode==="cloud"?t("backup_cloud"):t("backup_local")}</p></div>
-    <div class="row"><button class="btn" id="exportBtn" ${S.items.length?"":"disabled"}>${t("export")}</button><button class="btn" id="importBtn">${t("import")}</button><input type="file" id="importFile" accept=".json,application/json" hidden></div>
+    <div class="row"><button class="btn" id="exportBtn" ${S.items.length?"":'aria-disabled="true"'}>${t("export")}</button><button class="btn" id="importBtn">${t("import")}</button><input type="file" id="importFile" accept=".json,application/json" hidden></div>
   </div>`;
 }
 async function exportStock(){
@@ -563,7 +565,6 @@ async function importStock(file){
 /* ---------- render ---------- */
 function render(){
   if(S.dragging){S.pendingRender=true;return}
-  const tab=(location.hash||"#list").slice(1); S.tab=["list","stock","history"].includes(tab)?tab:"list";
   document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.tab===S.tab)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   const sync=$("#sync"); sync.className="sync "+(S.mode==="cloud"?"cloud":"");
   sync.querySelector("span").textContent=S.mode==="cloud"?t("sync_cloud"):S.mode==="local"?t("sync_local"):t("loading");
@@ -578,6 +579,15 @@ function render(){
   if(fid){const el=document.getElementById(fid);if(el){el.focus({preventScroll:true});if(sel)try{el.setSelectionRange(...sel)}catch{}}}
 }
 
+// Switch tab without relying on the browser's hash navigation (some app views ignore it). Tapping the open tab scrolls to the top.
+function go(tab){
+  if(!TABS.includes(tab)) return;
+  const same=S.tab===tab; S.tab=tab;
+  try{ if(location.hash!=="#"+tab) history.replaceState(null,"","#"+tab) }catch{}
+  if(!same){ S.dragging=false; render(); }
+  try{ window.scrollTo({top:0,behavior:same?"smooth":"auto"}) }catch{ window.scrollTo(0,0) }
+}
+
 /* ---------- events ---------- */
 const main=$("#main");
 main.addEventListener("click",async ev=>{
@@ -586,7 +596,7 @@ main.addEventListener("click",async ev=>{
   if(b.id==="exportBtn"){exportStock();return}
   if(b.id==="importBtn"){$("#importFile").click();return}
   if(b.dataset.edit!==undefined){editItem(b.dataset.edit);return}
-  if(b.id==="newList"){const n=makeList();if(openLists().some(o=>o.name===n.name))n.name+=" ("+(openLists().length+1)+")";S.listId=n.id;await Store.saveList(n);location.hash="#list";return}
+  if(b.id==="newList"){const n=makeList();if(openLists().some(o=>o.name===n.name))n.name+=" ("+(openLists().length+1)+")";S.listId=n.id;await Store.saveList(n);go("list");return}
   if(b.id==="renameList"&&l){renameList(l);return}
   if(b.id==="delList"&&l){armed(b,()=>{S.listId=null;Store.deleteList(l.id);toast(t("list_deleted"))});return}
   if(b.id==="completeBtn"&&l){b.disabled=true;await completeList(l);return}
@@ -622,7 +632,7 @@ main.addEventListener("click",async ev=>{
     let c=l?clone(l):makeList();
     for(const x of [...h.lines,...(h.missed||[])]){ const ex=c.lines.find(y=>!y.done&&norm(y.name)===norm(x.name)); if(ex) continue;
       const it=itemByName(x.name); c.lines.push({id:uid("ln"),itemId:it?.id||null,name:x.name,unit:x.unit,qty:x.qty,done:false,auto:false,cat:it?.cat||guessCat(x.name)}); }
-    S.listId=c.id; await Store.saveList(c); toast(t("copied")); location.hash="#list"; return;
+    S.listId=c.id; await Store.saveList(c); toast(t("copied")); go("list"); return;
   }
   if(b.dataset.hdel){armed(b,()=>{Store.deleteList(b.dataset.hdel);toast(t("removed_history"))});return}
 });
@@ -657,7 +667,8 @@ main.addEventListener("change",ev=>{
   if(el.type==="range"){S.dragging=false;S.pendingRender=false;setQty(el.closest("[data-item]").dataset.item,el.value,{immediate:true})}
 });
 ["pointerup","touchend","keyup"].forEach(e=>main.addEventListener(e,()=>{if(S.dragging){setTimeout(()=>{if(S.dragging){S.dragging=false;if(S.pendingRender)render()}},300)}}));
-window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+window.addEventListener("hashchange",()=>{const n=fromHash();if(n!==S.tab){S.tab=n;render();window.scrollTo(0,0)}});
+document.addEventListener("click",ev=>{const a=ev.target.closest('a[href^="#"]');if(!a)return;const tab=a.getAttribute("href").slice(1);if(TABS.includes(tab)){ev.preventDefault();go(tab)}});
 $("#lang").addEventListener("change",e=>setLang(e.target.value));
 
 setLang(LANG); Store.init();
