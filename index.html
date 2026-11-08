@@ -104,8 +104,8 @@ h3{font-size:17px;font-weight:600}
 .empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:22px 18px;text-align:center;color:var(--muted)}
 
 /* shopping list */
-.add-row{display:grid;grid-template-columns:1fr 70px 84px auto;gap:6px;align-items:center}
-@media (max-width:440px){.add-row{grid-template-columns:1fr 64px 76px}.add-row .btn{grid-column:1/-1}}
+.add-row{display:grid;grid-template-columns:64px 84px minmax(0,1fr) auto;gap:6px;align-items:center}
+.add-row #addName{grid-column:1/-1}
 .lines{display:flex;flex-direction:column}
 .line{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
 .line:first-child{border-top:0}
@@ -173,20 +173,25 @@ nav.tabs .badge{position:absolute;top:5px;left:calc(50% + 8px);background:var(--
 .form-grid .full{grid-column:1/-1}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;font-weight:600;z-index:60;font-size:14px;max-width:calc(100% - 32px);text-align:center}
 @media (max-width:420px){.stat .v{font-size:22px}h1{font-size:26px}}
+.top-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.lang{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235B6A5E' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 9px center/10px 6px;border-radius:99px;padding:5px 26px 5px 11px;font-size:13px!important;font-weight:600;color:var(--ink);cursor:pointer;min-height:32px}
 </style>
 
 <div class="app">
   <header class="top">
     <div class="brand"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="var(--accent)"/><rect x="180" y="92" width="152" height="50" rx="14" fill="var(--bg)"/><rect x="136" y="156" width="240" height="272" rx="52" fill="var(--bg)"/><rect x="174" y="232" width="164" height="122" rx="16" fill="var(--accent)"/><path d="M214 294l30 30 56-60" fill="none" stroke="var(--bg)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/></svg><div>Pantry<span>log</span></div></div>
-    <div class="sync" id="sync"><i></i><span>Loading…</span></div>
+    <div class="top-right">
+      <select class="lang" id="lang" aria-label="Language"><option value="en">English</option><option value="fi">Suomi</option><option value="sv">Svenska</option></select>
+      <div class="sync" id="sync"><i></i><span>Loading…</span></div>
+    </div>
   </header>
   <main id="main"><div class="empty">Loading your pantry…</div></main>
 </div>
 
 <nav class="tabs" aria-label="Sections"><div class="in2">
-  <a href="#list" data-tab="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>List<span class="badge" id="badgeList" hidden></span></a>
-  <a href="#stock" data-tab="stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16"/></svg>Stock<span class="badge" id="badgeStock" hidden></span></a>
-  <a href="#history" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>History</a>
+  <a href="#list" data-tab="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg><span data-t="tab_list">List</span><span class="badge" id="badgeList" hidden></span></a>
+  <a href="#stock" data-tab="stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16"/></svg><span data-t="tab_stock">Stock</span><span class="badge" id="badgeStock" hidden></span></a>
+  <a href="#history" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span data-t="tab_history">History</span></a>
 </div></nav>
 
 <datalist id="itemNames"></datalist>

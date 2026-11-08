@@ -9,7 +9,8 @@ It's plain HTML, CSS and JavaScript, with no build step, no framework and no acc
 ## Features
 
 ### Shopping list
-- Add items with a quantity and unit (pcs, pack, kg, L and more). Names you already have in stock are suggested as you type.
+- Add items with a quantity, unit (pcs, pack, kg, L and more) and category. Names you already have in stock are suggested as you type.
+- The **category is picked automatically from the item name**, for example Chicken → Meat & fish, Milk → Dairy & eggs, Bananas → Produce. It understands common English, Finnish and Swedish names (kana, maito, kyckling, mjölk…). You can still change it, and items already in stock keep their own category.
 - Items are grouped by category (Produce, Dairy & eggs, Bakery…) so the list follows the shop.
 - Tick items as they go in the basket. A progress bar shows how much is done.
 - **Complete list** adds every ticked item to stock. Items that aren't in stock yet are created automatically.
@@ -33,6 +34,12 @@ It's plain HTML, CSS and JavaScript, with no build step, no framework and no acc
 - Every completed list is saved as a receipt, including items you didn't find.
 - Shows trips and items bought this month, and the item you buy most often.
 - **Shop this list again** copies a past list into your open list.
+
+### Languages
+- English (en-GB) is the default. Finnish (fi-FI) and Swedish (sv-SE) can be picked from the menu at the top right.
+- The choice is remembered on each phone or browser.
+- Buttons, messages, categories, units (kpl, st…), dates and decimal commas all follow the chosen language. The common staples are added with names in that language.
+- Item and list names you type are kept as written. Categories and units are stored in English inside the data, so stock files can be exported and imported between languages.
 
 ### Mobile
 - Works on any phone browser and can be added to the home screen as an app.
@@ -117,6 +124,15 @@ lists/{id}  { id, name, status: "open" | "completed",
 
 - `auto: true` marks a line that was added because stock went below the minimum.
 - `missed` holds the lines that weren't ticked when a list was completed. They're shown crossed out in History.
+
+## Adding a language
+
+All text is in the `T` object near the top of `app.js`, with one block per language (`en`, `fi`, `sv`).
+
+1. Copy the `fi` block, give it a new code (for example `de`) and translate the values. Keep `{placeholders}` such as `{n}` and `{name}` as they are.
+2. Add the language to `LANGS` with its locale, for example `de:{locale:"de-DE",idx:3}`.
+3. Add an `<option value="de">Deutsch</option>` to the language menu in `index.html`.
+4. Add the staple names in the new language to `STAPLES` (the `idx` picks the column).
 
 ## Tech
 
