@@ -217,7 +217,7 @@ function viewStock(){
       <p class="muted" style="margin:0;font-size:14px">Add the things you buy regularly. Give each a minimum: when the slider drops below it, the item goes on your shopping list. Completed lists add what you bought back here.</p>
       <div class="chips">${STAPLES.slice(0,8).map(s=>`<span class="chip">${s[0]}</span>`).join("")}<span class="chip">+${STAPLES.length-8}</span></div>
       <button class="btn primary block" id="addStaples">Add ${STAPLES.length} common staples</button>
-      <button class="btn block" data-edit="">Add my own item</button></div></div>`;
+      <button class="btn block" data-edit="">Add my own item</button></div>${backupCard()}</div>`;
   return `<div class="stack">
     <div class="spread"><div><h1>Stock</h1><p class="muted" style="margin:2px 0 0;font-size:14px">${S.items.length} items · <span style="color:${low.length?"var(--warn)":"var(--accent)"};font-weight:600">${low.length?low.length+" low":"all stocked"}</span></p></div><button class="btn primary" data-edit="">+ Item</button></div>
     <input class="field" id="search" type="search" placeholder="Search stock" value="${esc(S.q)}" aria-label="Search stock">
@@ -228,6 +228,7 @@ function viewStock(){
     </div>
     ${list.length?gk.map(c=>`<div class="eyebrow cat-head">${esc(c)}</div>${groups.get(c).map(itemHtml).join("")}`).join("")
       :`<div class="empty">${S.filter==="low"?"Nothing is low. Your pantry is stocked.":"No items match."}</div>`}
+    ${backupCard()}
   </div>`;
 }
 function itemHtml(it){
@@ -320,6 +321,50 @@ function renameList(l){
   setTimeout(()=>$("#renName")?.select(),30);
 }
 
+/* ---------- stock backup ---------- */
+function backupCard(){
+  return `<div class="card stack" style="gap:8px;margin-top:10px">
+    <div><h3>Backup your stock</h3><p class="muted" style="margin:2px 0 0;font-size:13px">${S.mode==="cloud"?"Your stock is saved online. Save a backup file now and then, or load one from another copy of the app.":"Your stock lives only in this browser. Save a backup file to keep it safe or move it to another phone."}</p></div>
+    <div class="row"><button class="btn" id="exportBtn" ${S.items.length?"":"disabled"}>Export stock</button><button class="btn" id="importBtn">Import stock</button><input type="file" id="importFile" accept=".json,application/json" hidden></div>
+  </div>`;
+}
+async function exportStock(){
+  if(!S.items.length){toast("There's no stock to export yet");return}
+  const items=[...S.items].sort((a,b)=>(a.cat||"").localeCompare(b.cat||"")||a.name.localeCompare(b.name))
+    .map(({id,name,cat,unit,qty,min,target,createdAt})=>({id,name,cat,unit,qty,min,target,createdAt}));
+  const data=JSON.stringify({app:"pantrylog",kind:"stock",version:1,exportedAt:new Date().toISOString(),items},null,1);
+  const filename="pantrylog-stock-"+new Date().toISOString().slice(0,10)+".json";
+  let dl=null; try{ dl=window.claude?.use ? await window.claude.use("downloads") : null }catch{}
+  if(dl){
+    try{ await dl.save({filename,data}); toast(`Exported ${items.length} items`); }
+    catch(e){ if(e?.code!=="declined") toast("Couldn't save the file here. Try again in a moment."); }
+    return;
+  }
+  try{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([data],{type:"application/json"})); a.download=filename;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000); toast(`Exported ${items.length} items`); }
+  catch{ toast("This browser blocked the download."); }
+}
+// Adds items that aren't here yet (matched by name). Items you already have are left as they are.
+async function importStock(file){
+  let d; try{ d=JSON.parse(await file.text()) }catch{ toast("That file isn't a Pantrylog stock file."); return }
+  if(!d||d.app!=="pantrylog"||!Array.isArray(d.items)){ toast("That file isn't a Pantrylog stock file."); return }
+  const ids=new Set(S.items.map(x=>x.id)), names=new Set(S.items.map(x=>norm(x.name)));
+  const fresh=[];
+  for(const x of d.items){
+    if(!x||!x.name||names.has(norm(x.name))) continue;
+    const unit=UNITS.includes(x.unit)?x.unit:"pcs", min=Math.max(0,num(x.min));
+    const it={id:(typeof x.id==="string"&&/^[\w.~:@+-]{1,60}$/.test(x.id)&&!ids.has(x.id))?x.id:uid("i"),name:String(x.name).trim().slice(0,80),
+      cat:String(x.cat||"Other").slice(0,40),unit,qty:Math.max(0,num(x.qty)),min,target:Math.max(min,num(x.target)),createdAt:num(x.createdAt)||Date.now()};
+    names.add(norm(it.name)); ids.add(it.id); fresh.push(it);
+  }
+  const skipped=d.items.length-fresh.length;
+  if(!fresh.length){ toast("Everything in that file is already in your stock."); return }
+  toast("Importing stock…");
+  for(const it of fresh) await Store.saveItem(it);
+  for(const it of fresh) await syncAuto(it,{quiet:true});
+  toast(`Imported ${fresh.length} item${fresh.length===1?"":"s"}${skipped?` · ${skipped} already here`:""}`);
+}
+
 /* ---------- render ---------- */
 function render(){
   if(S.dragging){S.pendingRender=true;return}
@@ -343,6 +388,8 @@ const main=$("#main");
 main.addEventListener("click",async ev=>{
   const t=ev.target.closest("button,[data-filter]"); if(!t) return;
   const l=currentList();
+  if(t.id==="exportBtn"){exportStock();return}
+  if(t.id==="importBtn"){$("#importFile").click();return}
   if(t.dataset.edit!==undefined){editItem(t.dataset.edit);return}
   if(t.id==="newList"){const n=makeList();if(openLists().some(o=>o.name===n.name))n.name+=" ("+(openLists().length+1)+")";S.listId=n.id;await Store.saveList(n);location.hash="#list";return}
   if(t.id==="renameList"&&l){renameList(l);return}
@@ -404,6 +451,7 @@ main.addEventListener("input",ev=>{
 });
 main.addEventListener("change",ev=>{
   const t=ev.target;
+  if(t.id==="importFile"){const f=t.files[0]; t.value=""; if(f) importStock(f); return}
   if(t.id==="addUnit") S.draft.unit=t.value;
   if(t.type==="range"){S.dragging=false;S.pendingRender=false;setQty(t.closest("[data-item]").dataset.item,t.value,{immediate:true})}
 });

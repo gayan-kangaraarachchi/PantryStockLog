@@ -22,6 +22,7 @@ It's plain HTML, CSS and JavaScript, with no build step, no framework and no acc
 - Colour shows the state at a glance: green means in stock, amber means low, red means out.
 - Search the stock, and filter it by category or to show only low items.
 - Start quickly with **Add 14 common staples**.
+- **Export stock** saves all items to a JSON file. **Import stock** loads one and adds only the items that are missing (see below).
 
 ### Automatic refill
 - When an item drops **below its minimum**, it's added to the open shopping list with enough to bring it back up to the target.
@@ -69,6 +70,25 @@ Keep all of these files together in the root of the repo.
 | As a claude.ai Artifact | A shared live database: everyone with access sees the same stock and lists |
 
 On GitHub Pages, **each phone keeps its own data**, and it isn't shared between household members. Clearing the browser's site data deletes it. To share between phones, the save functions in `app.js` (the `Store` object) can be connected to a backend such as Firebase or Supabase.
+
+## Export and import stock
+
+At the bottom of the **Stock** tab:
+
+- **Export stock** downloads `pantrylog-stock-YYYY-MM-DD.json` with every stock item (name, category, unit, quantity, minimum, target).
+- **Import stock** reads that file and **adds only the items that are missing**, matched by name and ignoring capital letters. Items you already have keep their current quantity and settings. Imported items that are below their minimum go straight onto the shopping list.
+
+Use it to back up your stock, or to move it to another phone: export on one phone, send the file, then import on the other.
+
+```json
+{
+ "app": "pantrylog", "kind": "stock", "version": 1,
+ "exportedAt": "2026-11-08T12:00:00.000Z",
+ "items": [
+  { "id": "i...", "name": "Milk", "cat": "Dairy & eggs", "unit": "L", "qty": 2, "min": 1, "target": 3, "createdAt": 1762600000000 }
+ ]
+}
+```
 
 ## Run it
 
