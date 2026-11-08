@@ -2,7 +2,7 @@
 
 A phone-first shopping list and pantry stock tracker. It keeps track of what you have at home, adds things to your shopping list when they run low, and moves what you buy back into stock.
 
-**Live app:** https://gayan-kangaraarachchi.github.io/PantryStockLog.io/
+**Live app:** [https://gayan-kangaraarachchi.github.io/PantryStockLog.io/](https://gayan-kangaraarachchi.github.io/PantryStockLog/)
 
 It's plain HTML, CSS and JavaScript, with no build step, no framework and no account to sign up for.
 
